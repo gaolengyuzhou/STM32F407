@@ -10,15 +10,16 @@
 ;*                        calls main()).
 ;*                      After Reset the CortexM4 processor is in Thread mode,
 ;*                      priority is Privileged, and the Stack is set to Main.
-;*******************************************************************************
+;********************************************************************************
 ;* @attention
 ;*
-;* Copyright (c) 2017 STMicroelectronics.
-;* All rights reserved.
+;* <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+;* All rights reserved.</center></h2>
 ;*
-;* This software is licensed under terms that can be found in the LICENSE file
-;* in the root directory of this software component.
-;* If no LICENSE file comes with this software, it is provided AS-IS.
+;* This software component is licensed by ST under BSD 3-Clause license,
+;* the "License"; You may not use this file except in compliance with the
+;* License. You may obtain a copy of the License at:
+;*                        opensource.org/licenses/BSD-3-Clause
 ;*
 ;*******************************************************************************
 ;* <<< Use Configuration Wizard in Context Menu >>>
@@ -29,7 +30,7 @@
 ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
 ; </h>
 
-Stack_Size      EQU     0x00000400
+Stack_Size      EQU     0x00000800
 
                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
 Stack_Mem       SPACE   Stack_Size
@@ -40,6 +41,7 @@ __initial_sp
 ;   <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
 ; </h>
 
+;未用到编译器自带的内存管理(malloc,free等)，设置Heap_Szie为0
 Heap_Size       EQU     0x00000200
 
                 AREA    HEAP, NOINIT, READWRITE, ALIGN=3
@@ -170,7 +172,10 @@ Reset_Handler    PROC
                  EXPORT  Reset_Handler             [WEAK]
         IMPORT  SystemInit
         IMPORT  __main
-
+                 LDR     R0, =0xE000ED88    ; 使能浮点运算 CP10,CP11
+                 LDR     R1,[R0]
+                 ORR     R1,R1,#(0xF << 20)
+                 STR     R1,[R0]
                  LDR     R0, =SystemInit
                  BLX     R0
                  LDR     R0, =__main
@@ -420,3 +425,5 @@ __user_initial_stackheap
                  ENDIF
 
                  END
+
+;************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE*****

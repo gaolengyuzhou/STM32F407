@@ -12,17 +12,6 @@
   *           + Peripheral State methods
   *           + HASH or HMAC processing suspension/resumption
   *
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
   @verbatim
  ===============================================================================
                      ##### How to use this driver #####
@@ -123,7 +112,7 @@
       (#) HAL in interruption mode (interruptions driven)
 
         (##)Due to HASH peripheral hardware design, the peripheral interruption is triggered every 64 bytes.
-        This is why, for driver implementation simplicity s sake, user is requested to enter a message the
+        This is why, for driver implementation simplicity’s sake, user is requested to enter a message the
         length of which is a multiple of 4 bytes.
 
         (##) When the message length (in bytes) is not a multiple of words, a specific field exists in HASH_STR
@@ -158,9 +147,9 @@
      [..]
       (#) The compilation define  USE_HAL_HASH_REGISTER_CALLBACKS when set to 1
           allows the user to configure dynamically the driver callbacks.
-          Use function HAL_HASH_RegisterCallback() to register a user callback.
+          Use function @ref HAL_HASH_RegisterCallback() to register a user callback.
 
-      (#) Function HAL_HASH_RegisterCallback() allows to register following callbacks:
+      (#) Function @ref HAL_HASH_RegisterCallback() allows to register following callbacks:
             (+) InCpltCallback    : callback for input completion.
             (+) DgstCpltCallback  : callback for digest computation completion.
             (+) ErrorCallback     : callback for error.
@@ -169,9 +158,9 @@
           This function takes as parameters the HAL peripheral handle, the Callback ID
           and a pointer to the user callback function.
 
-      (#) Use function HAL_HASH_UnRegisterCallback() to reset a callback to the default
+      (#) Use function @ref HAL_HASH_UnRegisterCallback() to reset a callback to the default
           weak (surcharged) function.
-          HAL_HASH_UnRegisterCallback() takes as parameters the HAL peripheral handle,
+          @ref HAL_HASH_UnRegisterCallback() takes as parameters the HAL peripheral handle,
           and the Callback ID.
           This function allows to reset following callbacks:
             (+) InCpltCallback    : callback for input completion.
@@ -180,13 +169,13 @@
             (+) MspInitCallback   : HASH MspInit.
             (+) MspDeInitCallback : HASH MspDeInit.
 
-      (#) By default, after the HAL_HASH_Init and if the state is HAL_HASH_STATE_RESET
+      (#) By default, after the @ref HAL_HASH_Init and if the state is HAL_HASH_STATE_RESET
           all callbacks are reset to the corresponding legacy weak (surcharged) functions:
-          examples HAL_HASH_InCpltCallback(), HAL_HASH_DgstCpltCallback()
+          examples @ref HAL_HASH_InCpltCallback(), @ref HAL_HASH_DgstCpltCallback()
           Exception done for MspInit and MspDeInit callbacks that are respectively
-          reset to the legacy weak (surcharged) functions in the HAL_HASH_Init
-          and HAL_HASH_DeInit only when these callbacks are null (not registered beforehand)
-          If not, MspInit or MspDeInit are not null, the HAL_HASH_Init and HAL_HASH_DeInit
+          reset to the legacy weak (surcharged) functions in the @ref HAL_HASH_Init
+          and @ref HAL_HASH_DeInit only when these callbacks are null (not registered beforehand)
+          If not, MspInit or MspDeInit are not null, the @ref HAL_HASH_Init and @ref HAL_HASH_DeInit
           keep and use the user MspInit/MspDeInit callbacks (registered beforehand).
 
           Callbacks can be registered/unregistered in READY state only.
@@ -194,14 +183,25 @@
           in READY or RESET state, thus registered (user) MspInit/DeInit callbacks can be used
           during the Init/DeInit.
           In that case first register the MspInit/MspDeInit user callbacks
-          using HAL_HASH_RegisterCallback before calling HAL_HASH_DeInit
-          or HAL_HASH_Init function.
+          using @ref HAL_HASH_RegisterCallback before calling @ref HAL_HASH_DeInit
+          or @ref HAL_HASH_Init function.
 
           When The compilation define USE_HAL_HASH_REGISTER_CALLBACKS is set to 0 or
           not defined, the callback registering feature is not available
           and weak (surcharged) callbacks are used.
 
   @endverbatim
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
+  *
   ******************************************************************************
   */
 
@@ -1657,7 +1657,7 @@ static void HASH_DMAXferCplt(DMA_HandleTypeDef *hdma)
   HASH_HandleTypeDef *hhash = (HASH_HandleTypeDef *)((DMA_HandleTypeDef *)hdma)->Parent;
   uint32_t inputaddr;
   uint32_t buffersize;
-  HAL_StatusTypeDef status;
+  HAL_StatusTypeDef status = HAL_OK;
 
   if (hhash->State != HAL_HASH_STATE_SUSPENDED)
   {
@@ -1769,6 +1769,8 @@ static void HASH_DMAXferCplt(DMA_HandleTypeDef *hdma)
                                 (((buffersize % 4U) != 0U) ? ((buffersize + (4U - (buffersize % 4U))) / 4U) : \
                                  (buffersize / 4U)));
 
+
+
       /* Enable DMA requests */
       SET_BIT(HASH->CR, HASH_CR_DMAE);
 
@@ -1834,9 +1836,8 @@ static HAL_StatusTypeDef HASH_WriteData(HASH_HandleTypeDef *hhash, uint8_t *pInB
 {
   uint32_t buffercounter;
   __IO uint32_t inputaddr = (uint32_t) pInBuffer;
-  uint32_t tmp;
 
-  for (buffercounter = 0U; buffercounter < Size / 4U; buffercounter++)
+  for (buffercounter = 0U; buffercounter < Size; buffercounter += 4U)
   {
     /* Write input data 4 bytes at a time */
     HASH->DIN = *(uint32_t *)inputaddr;
@@ -1844,16 +1845,8 @@ static HAL_StatusTypeDef HASH_WriteData(HASH_HandleTypeDef *hhash, uint8_t *pInB
 
     /* If the suspension flag has been raised and if the processing is not about
     to end, suspend processing */
-    if ((hhash->SuspendRequest == HAL_HASH_SUSPEND) && ((buffercounter * 4 + 4U) < Size))
+    if ((hhash->SuspendRequest == HAL_HASH_SUSPEND) && ((buffercounter + 4U) < Size))
     {
-      /* wait for flag BUSY not set before  Wait for DINIS = 1*/
-      if (buffercounter * 4 >= 64U)
-      {
-        if (HASH_WaitOnFlagUntilTimeout(hhash, HASH_FLAG_BUSY, SET, HASH_TIMEOUTVALUE) != HAL_OK)
-        {
-          return HAL_TIMEOUT;
-        }
-      }
       /* Wait for DINIS = 1, which occurs when 16 32-bit locations are free
       in the input buffer */
       if (__HAL_HASH_GET_FLAG(HASH_FLAG_DINIS))
@@ -1868,14 +1861,14 @@ static HAL_StatusTypeDef HASH_WriteData(HASH_HandleTypeDef *hhash, uint8_t *pInB
           /* Save current reading and writing locations of Input and Output buffers */
           hhash->pHashInBuffPtr = (uint8_t *)inputaddr;
           /* Save the number of bytes that remain to be processed at this point */
-          hhash->HashInCount    =  Size - (buffercounter * 4 + 4U);
+          hhash->HashInCount    =  Size - (buffercounter + 4U);
         }
         else if ((hhash->Phase == HAL_HASH_PHASE_HMAC_STEP_1) || (hhash->Phase == HAL_HASH_PHASE_HMAC_STEP_3))
         {
           /* Save current reading and writing locations of Input and Output buffers */
           hhash->pHashKeyBuffPtr  = (uint8_t *)inputaddr;
           /* Save the number of bytes that remain to be processed at this point */
-          hhash->HashKeyCount  =  Size - (buffercounter * 4 + 4U);
+          hhash->HashKeyCount  =  Size - (buffercounter + 4U);
         }
         else
         {
@@ -1894,52 +1887,6 @@ static HAL_StatusTypeDef HASH_WriteData(HASH_HandleTypeDef *hhash, uint8_t *pInB
   }   /* for(buffercounter = 0; buffercounter < Size; buffercounter+=4)                 */
 
   /* At this point, all the data have been entered to the Peripheral: exit */
-
-  if (Size % 4U != 0U)
-  {
-    if (hhash->Init.DataType == HASH_DATATYPE_16B)
-    {
-      /* Write remaining input data */
-
-      if (Size % 4U <= 2)
-      {
-        HASH->DIN = (uint32_t) * (uint16_t *)inputaddr;
-      }
-      if (Size % 4U == 3)
-      {
-        HASH->DIN = *(uint32_t *)inputaddr;
-      }
-
-    }
-    else if ((hhash->Init.DataType == HASH_DATATYPE_8B)
-             || (hhash->Init.DataType == HASH_DATATYPE_1B))  /* byte swap or bit swap or */
-    {
-      /* Write remaining input data */
-      if (Size % 4U == 1)
-      {
-        HASH->DIN = (uint32_t) * (uint8_t *)inputaddr;
-      }
-      if (Size % 4U == 2)
-      {
-        HASH->DIN = (uint32_t) * (uint16_t *)inputaddr;
-      }
-      if (Size % 4U == 3)
-      {
-        tmp  = *(uint8_t *)inputaddr;
-        tmp |= *(uint8_t *)(inputaddr + 1U) << 8U ;
-        tmp |= *(uint8_t *)(inputaddr + 2U) << 16U;
-        HASH->DIN = tmp;
-      }
-
-    }
-    else
-    {
-      HASH->DIN = *(uint32_t *)inputaddr;
-    }
-    /*hhash->HashInCount += 4U;*/
-  }
-
-
   return  HAL_OK;
 }
 
@@ -2962,8 +2909,8 @@ HAL_StatusTypeDef HASH_Start_IT(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, u
            Update HashInCount and pHashInBuffPtr accordingly. */
         hhash->HashInCount = SizeVar;
         hhash->pHashInBuffPtr = (uint8_t *)inputaddr;
-        /* Update the configuration of the number of valid bits in last word of the message */
-        __HAL_HASH_SET_NBVALIDBITS(SizeVar);
+        __HAL_HASH_SET_NBVALIDBITS(
+          SizeVar);  /* Update the configuration of the number of valid bits in last word of the message */
         hhash->pHashOutBuffPtr = pOutBuffer;  /* Points at the computed digest */
         if (initialization_skipped == 1U)
         {
@@ -3530,8 +3477,7 @@ HAL_StatusTypeDef HMAC_Start_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, 
     /* Enable the DMA In DMA stream */
     status = HAL_DMA_Start_IT(hhash->hdmain, inputaddr, (uint32_t)&HASH->DIN,  \
                               (((inputSize % 4U) != 0U) ? ((inputSize + (4U - (inputSize % 4U))) / 4U) \
-                               : (inputSize / 4U)));
-
+                              : (inputSize / 4U)));
     /* Enable DMA requests */
     SET_BIT(HASH->CR, HASH_CR_DMAE);
 
@@ -3567,3 +3513,6 @@ HAL_StatusTypeDef HMAC_Start_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, 
   * @}
   */
 
+
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
